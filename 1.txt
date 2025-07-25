@@ -1,0 +1,2 @@
+[Proxy]
+Hysteria2-misaka = hysteria2, 107.173.15.202, 45859, password=76fcddce, sni=www.bing.com, skip-cert-verify=true
