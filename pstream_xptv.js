@@ -5,8 +5,20 @@
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
-// 将你提供的 TMDB Read API Token 填入这里（Bearer Token）
-const TMDB_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMmY0MTBmZGRjYTI1ZjBkNTJjNDQxMjc5MDUxZWNjMyIsIm5iZiI6MTc1NTcwNjQzMi44MTc5OTk4LCJzdWIiOiI2OGE1ZjQ0MGQyMGEyZWMyNThhODE3YjgiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.yNLDqbN1Mlkt_htaG_RPDi2IJ5dWqLfNSBTTWDMjT-U'
+// 读取订阅传入的配置（参考文档：通过 $config_str 注入）
+const $config = (typeof $config_str !== 'undefined' && $config_str) ? argsify($config_str) : {}
+
+// TMDB Read API Token（强制从订阅传入的 $config.TMDB_TOKEN 读取，无默认值）
+const TMDB_TOKEN = ($config && $config.TMDB_TOKEN) ? $config.TMDB_TOKEN : null
+
+function ensureToken() {
+  if (!TMDB_TOKEN) {
+    try { if (typeof $utils !== 'undefined' && $utils.toastError) { $utils.toastError('缺少 TMDB_TOKEN：请在订阅 config 中配置'); } } catch (e) {}
+    $print('TMDB_TOKEN missing in $config')
+    return false
+  }
+  return true
+}
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 
@@ -14,9 +26,19 @@ const appConfig = {
   ver: 20251106,
   title: 'P-Stream · TMDB',
   site: 'https://pstream.mov',
+  // 静态 tabs，部分运行时不会调用 getTabs，这里提前内置
+  tabs: [
+    { name: '电影 · 热门', ext: { kind: 'movie', sort: 'popular' } },
+    { name: '电影 · 最新', ext: { kind: 'movie', sort: 'latest' } },
+    { name: '电影 · 高分', ext: { kind: 'movie', sort: 'top' } },
+    { name: '剧集 · 热门', ext: { kind: 'series', sort: 'popular' } },
+    { name: '剧集 · 最新', ext: { kind: 'series', sort: 'latest' } },
+    { name: '剧集 · 高分', ext: { kind: 'series', sort: 'top' } },
+  ],
 }
 
 function tmdbHeaders() {
+  if (!ensureToken()) { throw new Error('TMDB_TOKEN is required via subscription config') }
   return {
     'User-Agent': UA,
     'Accept': 'application/json',
@@ -47,9 +69,10 @@ function parseVodId(vodId) {
 
 // 入口信息
 async function getConfig() {
-  const cfg = { ...appConfig }
-  cfg.tabs = await getTabs()
-  return jsonify(cfg)
+  // 直接返回静态配置，并打印订阅传入配置，增强兼容性与可观测性
+  $print('getConfig', $config)
+  ensureToken()
+  return jsonify(appConfig)
 }
 
 // 分类 Tab
@@ -69,6 +92,8 @@ async function getTabs() {
 async function getCards(ext) {
   try {
     ext = argsify(ext)
+    $print('getCards', ext)
+    if (!ensureToken()) { return jsonify({ list: [] }) }
     const page = Number(ext.page || 1)
     const kind = ext.kind === 'series' ? 'tv' : 'movie'
     const sort = ext.sort || 'popular'
@@ -111,6 +136,7 @@ async function getCards(ext) {
 async function getTracks(ext) {
   try {
     ext = argsify(ext)
+    $print('getTracks', ext)
     // 兼容三种传参来源：vod_id、ext.url（自定义）、ext.tmdb_id+ext.kind
     let id, type
     const parsed = parseVodId(ext?.url || ext?.vod_id)
@@ -157,10 +183,16 @@ async function getTracks(ext) {
 async function getPlayinfo(ext) {
   try {
     ext = argsify(ext)
+    $print('getPlayinfo', ext)
     const playUrl = ext.url || ''
     if (!playUrl) return jsonify({ urls: [] })
-    // 返回详情页链接占位。播放器可能无法直接播放该 URL，仅用于占位与外部解析。
-    return jsonify({ urls: [playUrl] })
+    // 返回详情页链接占位，并附加常见头（参考指南 headers 可选）
+    return jsonify({
+      urls: [playUrl],
+      headers: [
+        { 'User-Agent': UA, 'Referer': 'https://pstream.mov/' },
+      ],
+    })
   } catch (err) {
     $print(err)
   }
@@ -170,6 +202,8 @@ async function getPlayinfo(ext) {
 async function search(ext) {
   try {
     ext = argsify(ext)
+    $print('search', ext)
+    if (!ensureToken()) { return jsonify({ list: [] }) }
     const text = (ext.text || '').trim()
     const page = Number(ext.page || 1)
     if (!text) return jsonify({ list: [] })
@@ -194,3 +228,10 @@ async function search(ext) {
     $print(err)
   }
 }
+
+// 兼容别名：部分运行时使用 tabs/list/detail/play 作为入口
+async function tabs() { return await getTabs() }
+async function list(ext) { return await getCards(ext) }
+async function detail(ext) { return await getTracks(ext) }
+async function play(ext) { return await getPlayinfo(ext) }
+async function init() { return true }

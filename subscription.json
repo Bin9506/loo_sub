@@ -1,0 +1,12 @@
+﻿{
+  "exts": [
+    {
+      "name": "P-Stream  TMDB",
+      "url": "https://raw.githubusercontent.com/Bin9506/loo_sub/main/pstream_xptv.js",
+      "ver": 20251106,
+      "config": {
+        "TMDB_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMmY0MTBmZGRjYTI1ZjBkNTJjNDQxMjc5MDUxZWNjMyIsIm5iZiI6MTc1NTcwNjQzMi44MTc5OTk4LCJzdWIiOiI2OGE1ZjQ0MGQyMGEyZWMyNThhODE3YjgiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.yNLDqbN1Mlkt_htaG_RPDi2IJ5dWqLfNSBTTWDMjT-U"
+      }
+    }
+  ]
+}
