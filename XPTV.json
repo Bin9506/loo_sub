@@ -1,0 +1,16 @@
+﻿{
+  "sites": [
+    {
+      "name": "Sanity Test",
+      "type": 3,
+      "api": "csp_sanity",
+      "ext": "https://ghp.xptvhelper.link/https://raw.githubusercontent.com/Bin9506/loo_sub/main/sanity_test_xptv.js"
+    },
+    {
+      "name": "P-Stream  TMDB",
+      "type": 3,
+      "api": "csp_pstream_tmdb",
+      "ext": "https://ghp.xptvhelper.link/https://raw.githubusercontent.com/Bin9506/loo_sub/main/pstream_xptv_tokened.js"
+    }
+  ]
+}
