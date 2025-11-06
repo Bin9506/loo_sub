@@ -98,19 +98,16 @@ async function getCards(ext) {
     const kind = ext.kind === 'series' ? 'tv' : 'movie'
     const sort = ext.sort || 'popular'
 
-    let url = `${TMDB_BASE}/discover/${kind}`
-    const params = new URLSearchParams()
-
-    if (sort === 'popular') params.set('sort_by', 'popularity.desc')
-    else if (sort === 'top') {
-      params.set('sort_by', 'vote_average.desc')
-      params.set('vote_count.gte', '200') // 避免冷门条目高分干扰
+    let q = `page=${page}`
+    if (sort === 'popular') {
+      q += '&sort_by=popularity.desc'
+    } else if (sort === 'top') {
+      q += '&sort_by=vote_average.desc&vote_count.gte=200'
     } else if (sort === 'latest') {
-      params.set('sort_by', kind === 'movie' ? 'release_date.desc' : 'first_air_date.desc')
-      params.set(kind === 'movie' ? 'release_date.lte' : 'first_air_date.lte', new Date().toISOString().slice(0, 10))
+      q += `&sort_by=${kind === 'movie' ? 'release_date.desc' : 'first_air_date.desc'}`
+      q += `&${kind === 'movie' ? 'release_date.lte' : 'first_air_date.lte'}=${new Date().toISOString().slice(0, 10)}`
     }
-    params.set('page', String(page))
-    url += `?${params.toString()}`
+    let url = `${TMDB_BASE}/discover/${kind}?${q}`
 
     const { data } = await $fetch.get(url, { headers: tmdbHeaders() })
     const results = data?.results || []
